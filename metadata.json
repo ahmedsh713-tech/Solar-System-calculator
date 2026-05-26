@@ -1,0 +1,8 @@
+{
+  "name": "Remix: SolarWise Pro",
+  "description": "Comprehensive tool for calculating solar loads, battery capacity, panel mounting tilt, and AC/DC wire cross-sections.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

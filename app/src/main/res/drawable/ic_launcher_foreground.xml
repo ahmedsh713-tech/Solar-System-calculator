@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Sun Core -->
+    <path
+        android:fillColor="#FFB300"
+        android:pathData="M54,54m-18,0a18,18 0 1,1 36,0a18,18 0 1,1 -36,0" />
+    <!-- Rays -->
+    <path
+        android:fillColor="#FFE082"
+        android:pathData="M51,14h6v12h-6z M51,82h6v12h-6z M14,51h12v6H14z M82,51h12v6H82z M27.2,27.2l8.5,8.5l-4.2,4.2l-8.5,-8.5z M72.3,72.3l8.5,8.5l-4.2,4.2l-8.5,-8.5z M27.2,80.8l8.5,-8.5l4.2,4.2l-8.5,8.5z M72.3,35.7l8.5,-8.5l4.2,4.2l-8.5,8.5z" />
+    <!-- Center Bolt -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M55,42L45,55h7l-3,11l14,-15h-8z" />
+</vector>
