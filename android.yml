@@ -1,32 +1,45 @@
-name: Build Android APK
+name: Build Signed APK
 
 on:
-  push:
-    branches:
-      - main
+push:
+branches:
+- main
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+build:
+runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+steps:
+  - name: Checkout Repository
+    uses: actions/checkout@v4
 
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 17
+  - name: Setup Java
+    uses: actions/setup-java@v4
+    with:
+      distribution: temurin
+      java-version: 17
 
-      - name: Grant Permission
-        run: chmod +x gradlew
+  - name: Decode Keystore
+    run: |
+      echo "${{ secrets.SIGNING_KEY }}" | base64 --decode > release-key.jks
 
-      - name: Build APK
-        run: ./gradlew assembleDebug
+  - name: Grant Execute Permission
+    run: chmod +x gradlew
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: Abu-Almulatham-App
-          path: app/build/outputs/apk/debug/app-debug.apk
+  - name: Build Release APK
+    run: ./gradlew assembleRelease
+
+  - name: Sign APK
+    run: |
+      jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
+      -keystore release-key.jks \
+      -storepass "${{ secrets.KEY_STORE_PASSWORD }}" \
+      -keypass "${{ secrets.KEY_PASSWORD }}" \
+      app/build/outputs/apk/release/app-release-unsigned.apk \
+      "${{ secrets.ALIAS }}"
+
+  - name: Upload Signed APK
+    uses: actions/upload-artifact@v4
+    with:
+      name: Abu-Almulatham-Release
+      path: app/build/outputs/apk/release/app-release-unsigned.apk
