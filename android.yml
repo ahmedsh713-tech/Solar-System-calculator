@@ -1,33 +1,29 @@
-name: Android Build
+name: Android CI/CD (Production)
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. سحب الكود
-      - name: Checkout repository
+      # 1. Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. إعداد Java
-      - name: Set up JDK
+      # 2. JDK 17 (مستقر لكل Android حديث)
+      - name: Setup JDK
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          distribution: temurin
+          java-version: 17
 
-      # 3. إعطاء صلاحيات Gradle
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
-
-      # 4. إعداد كاش Gradle (تسريع البناء)
-      - name: Cache Gradle packages
+      # 3. Cache Gradle (تسريع قوي)
+      - name: Cache Gradle
         uses: actions/cache@v4
         with:
           path: |
@@ -35,23 +31,39 @@ jobs:
             ~/.gradle/wrapper
           key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
 
-      # 5. فك تشفير ملف keystore
+      # 4. Grant permissions
+      - name: Grant execute permission
+        run: chmod +x gradlew
+
+      # 5. Decode Keystore (آمن)
       - name: Decode Keystore
         run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > app/release-key.jks
+          mkdir -p app/keystore
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > app/keystore/release.jks
 
-      # 6. بناء التطبيق (Release)
-      - name: Build Release APK
-        run: ./gradlew assembleRelease
+      # 6. Build Debug (اختياري للتأكد)
+      - name: Build Debug
+        run: ./gradlew assembleDebug
+
+      # 7. Build Release APK + AAB
+      - name: Build Release
+        run: ./gradlew clean assembleRelease bundleRelease
         env:
-          KEYSTORE_PATH: app/release-key.jks
+          KEYSTORE_PATH: app/keystore/release.jks
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
-      # 7. رفع الناتج (APK)
+      # 8. Upload APK
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: release-apk
           path: app/build/outputs/apk/release/*.apk
+
+      # 9. Upload AAB (لـ Google Play)
+      - name: Upload AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-aab
+          path: app/build/outputs/bundle/release/*.aab
