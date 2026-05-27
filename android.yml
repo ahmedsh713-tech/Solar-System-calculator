@@ -1,14 +1,6 @@
 name: Build Signed APK
-
-on:
-push:
-branches:
-- main
-
-jobs:
-build:
-runs-on: ubuntu-latest
-
+on: push: branches: - main
+jobs: build: runs-on: ubuntu-latest
 steps:
   - name: Checkout Repository
     uses: actions/checkout@v4
@@ -35,6 +27,14 @@ steps:
       -keystore release-key.jks \
       -storepass "${{ secrets.KEY_STORE_PASSWORD }}" \
       -keypass "${{ secrets.KEY_PASSWORD }}" \
+      app/build/outputs/apk/release/app-release-unsigned.apk \
+      "${{ secrets.ALIAS }}"
+
+  - name: Upload Signed APK
+    uses: actions/upload-artifact@v4
+    with:
+      name: Abu-Almulatham-Release
+      path: app/build/outputs/apk/release/app-release-unsigned.apk      -keypass "${{ secrets.KEY_PASSWORD }}" \
       app/build/outputs/apk/release/app-release-unsigned.apk \
       "${{ secrets.ALIAS }}"
 
