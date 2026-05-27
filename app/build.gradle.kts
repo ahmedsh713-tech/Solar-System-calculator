@@ -7,7 +7,21 @@ plugins {
 android {
     namespace = "com.example"
     compileSdk = 34
+signingConfigs {
+    release {
+        storeFile file("release-key.jks")
+        storePassword System.getenv("KEY_STORE_PASSWORD")
+        keyAlias System.getenv("ALIAS")
+        keyPassword System.getenv("KEY_PASSWORD")
+    }
+}
 
+buildTypes {
+    release {
+        signingConfig signingConfigs.release
+        minifyEnabled false
+    }
+}
     defaultConfig {
         applicationId = "com.example"
         minSdk = 24
