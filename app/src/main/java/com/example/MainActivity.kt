@@ -473,6 +473,7 @@ fun AppContent(viewModel: SolarViewModel) {
     var showAddApplianceDialog by remember { mutableStateOf(false) }
     var selectedApplianceToEdit by remember { mutableStateOf<SolarAppliance?>(null) }
     var showSaveProjectDialog by remember { mutableStateOf(false) }
+    var showExportPdfDialog by remember { mutableStateOf(false) }
 
     // Support genuine layout direction flipping dynamically (RTL for Arabic / LTR for English)
     val targetDirection = if (currentLang == Language.AR) LayoutDirection.Rtl else LayoutDirection.Ltr
@@ -561,7 +562,8 @@ fun AppContent(viewModel: SolarViewModel) {
                                 2 -> SizingResultsTab(
                                     results = sizingResults,
                                     currentLang = currentLang,
-                                    onSaveReportClick = { showSaveProjectDialog = true }
+                                    onSaveReportClick = { showSaveProjectDialog = true },
+                                    onExportPdfClick = { showExportPdfDialog = true }
                                 )
                                 3 -> HistoryReportsTab(
                                     reports = reportsHistory,
@@ -612,6 +614,18 @@ fun AppContent(viewModel: SolarViewModel) {
                             showSaveProjectDialog = false
                             currentTab = 3 // Move automatically to records history tab!
                             Toast.makeText(context, AppText.saveSuccess.get(currentLang), Toast.LENGTH_LONG).show()
+                        }
+                    )
+                }
+
+                // Export PDF Dialog
+                if (showExportPdfDialog) {
+                    ExportClientReportDialog(
+                        currentLang = currentLang,
+                        onDismiss = { showExportPdfDialog = false },
+                        onConfirm = { clientName ->
+                            PdfExporter.exportSizingToPdf(context, clientName, sizingResults, currentLang)
+                            showExportPdfDialog = false
                         }
                     )
                 }
@@ -1568,7 +1582,8 @@ fun ConfigSliderContainer(
 fun SizingResultsTab(
     results: SizingResults,
     currentLang: Language,
-    onSaveReportClick: () -> Unit
+    onSaveReportClick: () -> Unit,
+    onExportPdfClick: () -> Unit
 ) {
     LazyColumn(
         modifier = Modifier
@@ -1592,26 +1607,53 @@ fun SizingResultsTab(
                     color = Color.White
                 )
 
-                Button(
-                    onClick = onSaveReportClick,
-                    colors = ButtonDefaults.buttonColors(containerColor = SolarSecondary),
-                    shape = RoundedCornerShape(12.dp),
-                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
-                    modifier = Modifier.height(36.dp).testTag("save_results_btn")
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Done,
-                        contentDescription = null,
-                        tint = Color.Black,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = if (currentLang == Language.AR) "حفظ التقرير" else "Save Client",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Black,
-                        color = Color.Black
-                    )
+                    Button(
+                        onClick = onSaveReportClick,
+                        colors = ButtonDefaults.buttonColors(containerColor = SolarSecondary),
+                        shape = RoundedCornerShape(10.dp),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+                        modifier = Modifier.height(34.dp).testTag("save_results_btn")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Done,
+                            contentDescription = null,
+                            tint = Color.Black,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(modifier = Modifier.width(3.dp))
+                        Text(
+                            text = if (currentLang == Language.AR) "حفظ" else "Save",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Black,
+                            color = Color.Black
+                        )
+                    }
+
+                    Button(
+                        onClick = onExportPdfClick,
+                        colors = ButtonDefaults.buttonColors(containerColor = SolarPrimary),
+                        shape = RoundedCornerShape(10.dp),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+                        modifier = Modifier.height(34.dp).testTag("export_pdf_btn")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Share,
+                            contentDescription = null,
+                            tint = Color.Black,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(modifier = Modifier.width(3.dp))
+                        Text(
+                            text = if (currentLang == Language.AR) "تصدير" else "PDF",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Black,
+                            color = Color.Black
+                        )
+                    }
                 }
             }
         }
@@ -1946,27 +1988,55 @@ fun SizingResultsTab(
 
         // Section 6: Action button block bottom page save project
         item {
-            Button(
-                onClick = onSaveReportClick,
-                colors = ButtonDefaults.buttonColors(containerColor = SolarPrimary),
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(54.dp)
-                    .testTag("action_save_client_calculation")
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.Done,
-                    contentDescription = null,
-                    tint = Color.Black
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = AppText.btnSaveProject.get(currentLang),
-                    fontWeight = FontWeight.Black,
-                    fontSize = 14.sp,
-                    color = Color.Black
-                )
+                Button(
+                    onClick = onSaveReportClick,
+                    colors = ButtonDefaults.buttonColors(containerColor = SolarSecondary),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp)
+                        .testTag("action_save_client_calculation")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Done,
+                        contentDescription = null,
+                        tint = Color.Black
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = if (currentLang == Language.AR) "حفظ التقرير" else "Save Report",
+                        fontWeight = FontWeight.Black,
+                        fontSize = 12.sp,
+                        color = Color.Black
+                    )
+                }
+
+                Button(
+                    onClick = onExportPdfClick,
+                    colors = ButtonDefaults.buttonColors(containerColor = SolarPrimary),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp)
+                        .testTag("action_export_pdf_calculation")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Share,
+                        contentDescription = null,
+                        tint = Color.Black
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = if (currentLang == Language.AR) "تصدير PDF" else "Export PDF",
+                        fontWeight = FontWeight.Black,
+                        fontSize = 12.sp,
+                        color = Color.Black
+                    )
+                }
             }
         }
     }
@@ -2236,6 +2306,8 @@ fun ReportDetailsDialog(
     currentLang: Language,
     onDismiss: () -> Unit
 ) {
+    val context = LocalContext.current
+
     Dialog(onDismissRequest = onDismiss) {
         Card(
             shape = RoundedCornerShape(16.dp),
@@ -2296,13 +2368,147 @@ fun ReportDetailsDialog(
                 ResultRow(label = AppText.suggestedWireCross.get(currentLang), value = "${report.suggestedCableSizeMm2} ${AppText.mm2Unit.get(currentLang)}", valueColor = SolarSecondary)
 
                 Spacer(modifier = Modifier.height(20.dp))
-                Button(
-                    onClick = onDismiss,
-                    colors = ButtonDefaults.buttonColors(containerColor = SurfaceVariantDark),
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth().height(48.dp)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Text(AppText.back.get(currentLang), fontWeight = FontWeight.Bold, color = Color.White)
+                    Button(
+                        onClick = onDismiss,
+                        colors = ButtonDefaults.buttonColors(containerColor = SurfaceVariantDark),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp)
+                    ) {
+                        Text(AppText.back.get(currentLang), fontWeight = FontWeight.Bold, color = Color.White)
+                    }
+
+                    Button(
+                        onClick = {
+                            PdfExporter.exportSizingToPdf(
+                                context,
+                                report.clientName,
+                                report.toSizingResults(),
+                                currentLang
+                            )
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = SolarPrimary),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp)
+                            .testTag("dialog_export_pdf_btn")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Share,
+                            contentDescription = null,
+                            tint = Color.Black,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = if (currentLang == Language.AR) "تصدير PDF" else "Export PDF",
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Black,
+                            fontSize = 12.sp
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ExportClientReportDialog(
+    currentLang: Language,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit
+) {
+    var clientNameInput by remember { mutableStateOf("") }
+    var inputError by remember { mutableStateOf<String?>(null) }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = SurfaceDark),
+            border = BorderStroke(1.5.dp, BorderDark),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                Text(
+                    text = if (currentLang == Language.AR) "تصدير تقرير العميل بصيغة PDF" else "Export Sizing Report PDF",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Black,
+                    color = Color.White
+                )
+                Spacer(modifier = Modifier.height(14.dp))
+
+                OutlinedTextField(
+                    value = clientNameInput,
+                    onValueChange = {
+                        clientNameInput = it
+                        if (it.isNotBlank()) inputError = null
+                    },
+                    label = { Text(AppText.clientPromptName.get(currentLang)) },
+                    isError = inputError != null,
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = SolarPrimary,
+                        unfocusedBorderColor = BorderDark,
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White
+                    ),
+                    modifier = Modifier.fillMaxWidth().testTag("export_client_name_text_input")
+                )
+                if (inputError != null) {
+                    Text(inputError!!, color = Color.Red, fontSize = 10.sp, modifier = Modifier.padding(top = 4.dp))
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = onDismiss,
+                        colors = ButtonDefaults.buttonColors(containerColor = SurfaceVariantDark),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(44.dp)
+                    ) {
+                        Text(AppText.cancel.get(currentLang), color = Color.White)
+                    }
+
+                    Button(
+                        onClick = {
+                            if (clientNameInput.isBlank()) {
+                                inputError = AppText.clientNameErr.get(currentLang)
+                            } else {
+                                onConfirm(clientNameInput)
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = SolarPrimary),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(44.dp)
+                            .testTag("confirm_export_client_btn")
+                    ) {
+                        Text(
+                            text = if (currentLang == Language.AR) "تصدير" else "Export",
+                            color = Color.Black,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
         }
