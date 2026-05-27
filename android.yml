@@ -18,17 +18,13 @@ steps:
   - name: Grant Execute Permission
     run: chmod +x gradlew
 
+    - name: Copy Keystore
+        run: cp release-key.jks app/release-key.jks
+
   - name: Build Release APK
     run: ./gradlew assembleRelease
 
-  - name: Sign APK
-    run: |
-      jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
-      -keystore release-key.jks \
-      -storepass "${{ secrets.KEY_STORE_PASSWORD }}" \
-      -keypass "${{ secrets.KEY_PASSWORD }}" \
-      app/build/outputs/apk/release/app-release-unsigned.apk \
-      "${{ secrets.ALIAS }}"
+  -
 
   - name: Upload Signed APK
     uses: actions/upload-artifact@v4
