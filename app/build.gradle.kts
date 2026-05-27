@@ -1,97 +1,33 @@
-plugins {
-alias(libs.plugins.android.application)
-alias(libs.plugins.kotlin.android)
-alias(libs.plugins.google.devtools.ksp)
-}
-
 android {
-namespace = "com.example"
-compileSdk = 34
 
-signingConfigs {
-    create("release") {
-        storeFile = file("release-key.jks")
-        storePassword = System.getenv("KEY_STORE_PASSWORD")
-        keyAlias = System.getenv("ALIAS")
-        keyPassword = System.getenv("KEY_PASSWORD")
+    signingConfigs {
+        create("release") {
+            val keystorePath = System.getenv("KEYSTORE_PATH") ?: ""
+
+            if (keystorePath.isNotEmpty()) {
+                storeFile = file(keystorePath)
+                storePassword = System.getenv("KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("KEY_ALIAS")
+                keyPassword = System.getenv("KEY_PASSWORD")
+            }
+        }
     }
-}
 
-defaultConfig {
-    applicationId = "com.example"
-    minSdk = 24
-    targetSdk = 34
-    versionCode = 1
-    versionName = "1.0"
+    buildTypes {
+        getByName("debug") {
+            isMinifyEnabled = false
+        }
 
-    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        getByName("release") {
+            isMinifyEnabled = true
+            isShrinkResources = true
 
-    vectorDrawables {
-        useSupportLibrary = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+
+            signingConfig = signingConfigs.getByName("release")
+        }
     }
-}
-
-buildTypes {
-    release {
-        signingConfig = signingConfigs.getByName("release")
-        isMinifyEnabled = false
-
-        proguardFiles(
-            getDefaultProguardFile("proguard-android-optimize.txt"),
-            "proguard-rules.pro"
-        )
-    }
-}
-
-compileOptions {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
-}
-
-kotlinOptions {
-    jvmTarget = "17"
-}
-
-buildFeatures {
-    compose = true
-    buildConfig = true
-}
-
-composeOptions {
-    kotlinCompilerExtensionVersion = "1.5.8"
-}
-
-packaging {
-    resources {
-        excludes += "/META-INF/{AL2.0,LGPL2.1}"
-    }
-}
-
-}
-
-dependencies {
-implementation(libs.androidx.core.ktx)
-implementation(libs.androidx.lifecycle.runtime.ktx)
-implementation(libs.androidx.lifecycle.runtime.compose)
-implementation(libs.androidx.lifecycle.viewmodel.compose)
-implementation(libs.androidx.activity.compose)
-
-implementation(platform(libs.androidx.compose.bom))
-
-implementation(libs.androidx.compose.ui)
-implementation(libs.androidx.compose.ui.graphics)
-implementation(libs.androidx.compose.ui.tooling.preview)
-implementation(libs.androidx.compose.material3)
-
-implementation(libs.androidx.room.runtime)
-implementation(libs.androidx.room.ktx)
-ksp(libs.androidx.room.compiler)
-
-implementation(libs.androidx.navigation.compose)
-
-testImplementation(libs.junit)
-
-androidTestImplementation(libs.androidx.junit)
-androidTestImplementation(libs.androidx.espresso.core)
-
 }
